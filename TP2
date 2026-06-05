@@ -1,0 +1,131 @@
+Misión A:(Enfoque por Hechos Estructurados)
+from experta import *
+
+# 1. Definición de Hechos Estructurados
+class LecturaSensor(Fact):
+    """Representa las lecturas individuales enviadas por los sensores de la obra."""
+    pass
+
+class EvaluacionRiesgo(Fact):
+    """Almacena el estado final deducido por el sistema."""
+    pass
+
+# 2. Motor de Inferencia Optimizado
+class MotorSeguridad(KnowledgeEngine):
+
+    # REGLA 1: RIESGO CRÍTICO (Prioridad Absoluta)
+    # Se dispara de inmediato si el viento supera los 60 km/h O si hay grietas.
+    @Rule(
+        OR(
+            LecturaSensor(tipo="viento", valor=MATCH.v & P(lambda v: v > 60)),
+            LecturaSensor(tipo="grietas", valor=True)
+        ),
+        salience=100
+    )
+    def detectar_riesgo_critico(self):
+        print("⚠️ [EMERGENCIA DE DETECCIÓN] Condiciones críticas identificadas.")
+        print("RESULTADO: RIESGO CRÍTICO DETECTADO.")
+        print("ACCIÓN: PARO TOTAL DE OBRA. Activando protocolos de evacuación inmediata.\n")
+        self.declare(EvaluacionRiesgo(estado="critico"))
+
+    # REGLA 2: RIESGO MODERADO (Evaluación Intermedia)
+    # Se evalúa si no se ha declarado un riesgo crítico en el sistema.
+    @Rule(
+        NOT(EvaluacionRiesgo(estado="critico")),
+        OR(
+            LecturaSensor(tipo="viento", valor=MATCH.v & P(lambda v: 40 <= v <= 60)),
+            LecturaSensor(tipo="humedad_extrema", valor=True)
+        ),
+        salience=50
+    )
+    def detectar_riesgo_moderado(self):
+        print("⚠️ [PRECAUCIÓN] Factores climáticos o del terreno inestables.")
+        print("RESULTADO: RIESGO MODERADO.")
+        print("ACCIÓN: ALERTA AMARILLA. Suspender maniobras de altura e izaje pesado.\n")
+        self.declare(EvaluacionRiesgo(estado="moderado"))
+
+    # REGLA 3: BAJO RIESGO (Operación Segura)
+    # Solo se activa si todos los parámetros están dentro de los rangos ideales.
+    @Rule(
+        LecturaSensor(tipo="viento", valor=MATCH.v & P(lambda v: v < 40)),
+        LecturaSensor(tipo="grietas", valor=False),
+        LecturaSensor(tipo="humedad_extrema", valor=False),
+        salience=10
+    )
+    def detectar_bajo_riesgo(self):
+        print("✅ [ESTADO OPERATIVO] Todos los parámetros bajo control.")
+        print("RESULTADO: BAJO RIESGO.")
+        print("ACCIÓN: OPERACIÓN NORMAL. Continuar con el cronograma planificado.\n")
+        self.declare(EvaluacionRiesgo(estado="bajo"))
+
+# --- PRUEBA Y CONTROL DE SIMULACIÓN ---
+engine = MotorSeguridad()
+engine.reset()
+
+print("--- Cargando datos de sensores en tiempo real ---")
+# Puedes comentar y descomentar líneas para probar diferentes escenarios
+engine.declare(LecturaSensor(tipo="viento", valor=65))
+engine.declare(LecturaSensor(tipo="grietas", valor=False))
+engine.declare(LecturaSensor(tipo="humedad_extrema", valor=True))
+
+
+
+
+
+
+
+
+
+
+Mision B:Funciones de Validación Objeto
+from constraint import *
+
+# 1. Definición de Funciones de Restricción Explicitas (Reglas de Negocio)
+def restriccion_base_grua(zona_grua):
+    """La Grúa Torre exige suelo firme estructural."""
+    return zona_grua == "Zona_Estable"
+
+def restriccion_dimensiones_excavadora(zona_excavadora):
+    """La Excavadora supera los límites volumétricos de espacios confinados."""
+    return zona_excavadora != "Zona_Estrecha"
+
+def verificar_congestion_logistica(zona_hormigonera, zona_grua):
+    """Evita el embotellamiento de camiones mezcladores y de carga."""
+    return zona_hormigonera != zona_grua
+
+def resolver_planificación_obra():
+    # Inicialización del espacio del problema (CSP)
+    constructor_plan = Problem()
+
+    # 2. Definición de Variables y sus respectivos Dominios
+    equipos = ["Grua_Torre", "Excavadora", "Hormigonera"]
+    zonas_obra = ["Zona_Estable", "Zona_Estrecha", "Zona_Comun"]
+    
+    constructor_plan.addVariables(equipos, zonas_obra)
+
+    # 3. Inyección del Grafo de Restricciones
+    # Restricción Física: No colisión (Unicidad)
+    constructor_plan.addConstraint(AllDifferentConstraint())
+
+    # Restricciones de Seguridad e Infraestructura
+    constructor_plan.addConstraint(restriccion_base_grua, ["Grua_Torre"])
+    constructor_plan.addConstraint(restriccion_dimensiones_excavadora, ["Excavadora"])
+    constructor_plan.addConstraint(verificar_congestion_logistica, ["Hormigonera", "Grua_Torre"])
+
+    # 4. Procesamiento y Poda del Árbol de Búsqueda
+    soluciones_validas = constructor_plan.getSolutions()
+
+    # 5. Output formalizado
+    print(f" Análisis de Combinatorias Finalizado.")
+    print(f"Se identificó {len(soluciones_validas)} distribución óptima que cumple el 100% de las normativas de seguridad:\n")
+    
+    for indice, asignacion in enumerate(soluciones_validas, 1):
+        print(f" Plan de Disposición Operativa N°{indice}:")
+        for maquina, zona in asignacion.items():
+            print(f"  ▪️ {maquina.replace('_', ' ')}  Asignada a: {zona.replace('_', ' ')}")
+
+# Ejecutar el planeador espacial
+resolver_planificación_obra()
+
+# Ejecución del motor logico
+engine.run()
